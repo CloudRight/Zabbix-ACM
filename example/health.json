@@ -1,0 +1,32 @@
+{
+   "unclassified_item": {
+     "status": 0,
+     "name": "Unclassified item",
+     "severity": "unclassified"
+   },
+   "informational_item": {
+     "status": 0,
+     "name": "Informational item",
+     "severity": "information"
+   },
+   "warning_item": {
+     "status": 0,
+     "name": "Warning item",
+     "severity": "warning"
+   },
+   "average_item": {
+     "status": 0,
+     "name": "Average item",
+     "severity": "average"
+   },
+   "high_item": {
+     "status": 1,
+     "name": "High item",
+     "severity": "high"
+   },
+   "disaster_item": {
+     "status": 2,
+     "name": "Disaster item",
+     "severity": "disaster"
+   }
+}
