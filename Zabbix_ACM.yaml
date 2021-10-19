@@ -1,107 +1,97 @@
 zabbix_export:
-  version: '5.2'
-  date: '2021-02-03T10:41:46Z'
+  version: "5.4"
+  date: "2021-10-19T13:54:22Z"
   groups:
-    -
+    - uuid: 7df96b18c230490a9a0a9e2307226338
       name: Templates
   templates:
-    -
-      template: 'Application Component Monitoring'
-      name: 'Application Component Monitoring'
+    - uuid: f58ec53ac6374256a95bf9572481d166
+      template: "Application Component Monitoring"
+      name: "Application Component Monitoring"
       description: |
         Queries an endpoint to retrieve the available health checks and its statuses.
 
         Documentation: https://github.com/CloudRight/Zabbix-ACM
         Issues: https://github.com/CloudRight/Zabbix-ACM/issues
       groups:
-        -
-          name: Templates
-      applications:
-        -
-          name: 'Application Component Monitoring'
-        -
-          name: 'Application Components'
+        - name: Templates
       items:
-        -
-          name: 'Get Application Component Statuses'
+        - uuid: 926b9a1e5a6f4ee4a9600584468d2a91
+          name: "Get Application Component Statuses"
           type: HTTP_AGENT
           key: acm.status
-          delay: '{$ACM_INTERVAL}'
-          history: '0'
-          trends: '0'
+          delay: "{$ACM_INTERVAL}"
+          history: "0"
+          trends: "0"
           value_type: TEXT
           authtype: BASIC
-          username: '{$ACM_HTTP_USER}'
-          password: '{$ACM_HTTP_PASS}'
-          description: 'Retrieves JSON feed of components and their statuses. Used as Dependent Item by discovered items.'
-          applications:
-            -
-              name: 'Application Component Monitoring'
+          username: "{$ACM_HTTP_USER}"
+          password: "{$ACM_HTTP_PASS}"
+          description: "Retrieves JSON feed of components and their statuses. Used as Dependent Item by discovered items."
           timeout: 30s
-          url: '{$ACM_URL}'
+          url: "{$ACM_URL}"
           headers:
-            -
-              name: Accept
+            - name: Accept
               value: application/json
+          tags:
+            - tag: Application
+              value: "Application Component Monitoring"
       discovery_rules:
-        -
-          name: 'Application Components'
+        - uuid: 50f92938f7e84b7f8c2514313f369462
+          name: "Application Components"
           type: DEPENDENT
           key: acm.discovery
-          delay: '0'
-          lifetime: '{$ACM_DISCOVERY_KEEP_PERIOD}'
+          delay: "0"
+          lifetime: "{$ACM_DISCOVERY_KEEP_PERIOD}"
           description: |
             Discovers application components listed in the JSON feed.
 
             Discovered items will be kept for a period of "{$ACM_DISCOVERY_KEEP_PERIOD}" which can be configured in the Host Macro's.  Defaults to 0, which means items no longer in the JSON output will be removed from Zabbix.
           item_prototypes:
-            -
-              name: 'Application Component Status - {#NAME}'
+            - uuid: 7c57730eb1a846b8babf68c72f851acc
+              name: "Application Component Status - {#NAME}"
               type: DEPENDENT
-              key: 'acm.status[{#KEY}]'
-              delay: '0'
-              description: 'Monitoring of auto-discovered application component {#NAME} with severity {#SEVERITY}. Retrieves the status from the Parent item'
-              applications:
-                -
-                  name: 'Application Components'
+              key: "acm.status[{#KEY}]"
+              delay: "0"
+              description: "Monitoring of auto-discovered application component {#NAME} with severity {#SEVERITY}. Retrieves the status from the Parent item"
               valuemap:
-                name: 'Application Component Monitoring'
+                name: "Application Component Monitoring"
               preprocessing:
-                -
-                  type: JSONPATH
+                - type: JSONPATH
                   parameters:
-                    - '$.[''{#KEY}''].status'
+                    - "$.['{#KEY}'].status"
                   error_handler: CUSTOM_ERROR
-                  error_handler_params: 'Unable to retrieve status for {#NAME}.'
+                  error_handler_params: "Unable to retrieve status for {#NAME}."
               master_item:
                 key: acm.status
+              tags:
+                - tag: Application
+                  value: "Application Components"
               trigger_prototypes:
-                -
-                  expression: '{last()}>0'
-                  name: 'Application component {#NAME} is in {ITEM.VALUE} state on {HOSTNAME}'
+                - uuid: 9c35afddd3f14c668ada61428c713cf4
+                  expression: "last(/Application Component Monitoring/acm.status[{#KEY}])>0"
+                  name: "Application component {#NAME} is in {ITEM.VALUE} state on {HOSTNAME}"
                   description: 'Triggers then the item goes to a state other than "OK" (0).'
-                  manual_close: 'YES'
+                  manual_close: "YES"
           graph_prototypes:
-            -
-              name: 'Application Component Status - {#NAME}'
-              width: '400'
-              yaxismax: '2'
+            - uuid: 207b245501c741fcb49a7e61ec725b98
+              name: "Application Component Status - {#NAME}"
+              width: "400"
+              yaxismax: "2"
               ymin_type_1: FIXED
               ymax_type_1: FIXED
               graph_items:
-                -
-                  sortorder: '1'
+                - sortorder: "1"
                   drawtype: FILLED_REGION
                   color: FF0000
                   calc_fnc: MAX
                   item:
-                    host: 'Application Component Monitoring'
-                    key: 'acm.status[{#KEY}]'
+                    host: "Application Component Monitoring"
+                    key: "acm.status[{#KEY}]"
           master_item:
             key: acm.status
           preprocessing:
-            -
-              type: JAVASCRIPT
+            - type: JAVASCRIPT
               parameters:
                 - |
                   var components = JSON.parse(value);
@@ -120,138 +110,111 @@ zabbix_export:
 
                   return JSON.stringify(lld);
           overrides:
-            -
-              name: 'Set Trigger Severity to Information'
-              step: '1'
+            - name: "Set Trigger Severity to Average"
+              step: "3"
               filter:
                 conditions:
-                  -
-                    macro: '{#SEVERITY}'
-                    value: ^information$
-                    formulaid: A
-              operations:
-                -
-                  operationobject: TRIGGER_PROTOTYPE
-                  operator: LIKE
-                  value: 'Application component'
-                  severity: INFO
-            -
-              name: 'Set Trigger Severity to Warning'
-              step: '2'
-              filter:
-                conditions:
-                  -
-                    macro: '{#SEVERITY}'
-                    value: ^warning$
-                    formulaid: A
-              operations:
-                -
-                  operationobject: TRIGGER_PROTOTYPE
-                  operator: LIKE
-                  value: 'Application component'
-                  severity: WARNING
-            -
-              name: 'Set Trigger Severity to Average'
-              step: '3'
-              filter:
-                conditions:
-                  -
-                    macro: '{#SEVERITY}'
+                  - macro: "{#SEVERITY}"
                     value: ^average$
                     formulaid: A
               operations:
-                -
-                  operationobject: TRIGGER_PROTOTYPE
+                - operationobject: TRIGGER_PROTOTYPE
                   operator: LIKE
-                  value: 'Application component'
+                  value: "Application component"
                   severity: AVERAGE
-            -
-              name: 'Set Trigger Severity to High'
-              step: '4'
+            - name: "Set Trigger Severity to Disaster"
+              step: "5"
               filter:
                 conditions:
-                  -
-                    macro: '{#SEVERITY}'
-                    value: ^high$
-                    formulaid: A
-              operations:
-                -
-                  operationobject: TRIGGER_PROTOTYPE
-                  operator: LIKE
-                  value: 'Application component'
-                  severity: HIGH
-            -
-              name: 'Set Trigger Severity to Disaster'
-              step: '5'
-              filter:
-                conditions:
-                  -
-                    macro: '{#SEVERITY}'
+                  - macro: "{#SEVERITY}"
                     value: ^disaster$
                     formulaid: A
               operations:
-                -
-                  operationobject: TRIGGER_PROTOTYPE
+                - operationobject: TRIGGER_PROTOTYPE
                   operator: LIKE
-                  value: 'Application component'
+                  value: "Application component"
                   severity: DISASTER
+            - name: "Set Trigger Severity to High"
+              step: "4"
+              filter:
+                conditions:
+                  - macro: "{#SEVERITY}"
+                    value: ^high$
+                    formulaid: A
+              operations:
+                - operationobject: TRIGGER_PROTOTYPE
+                  operator: LIKE
+                  value: "Application component"
+                  severity: HIGH
+            - name: "Set Trigger Severity to Information"
+              step: "1"
+              filter:
+                conditions:
+                  - macro: "{#SEVERITY}"
+                    value: ^information$
+                    formulaid: A
+              operations:
+                - operationobject: TRIGGER_PROTOTYPE
+                  operator: LIKE
+                  value: "Application component"
+                  severity: INFO
+            - name: "Set Trigger Severity to Warning"
+              step: "2"
+              filter:
+                conditions:
+                  - macro: "{#SEVERITY}"
+                    value: ^warning$
+                    formulaid: A
+              operations:
+                - operationobject: TRIGGER_PROTOTYPE
+                  operator: LIKE
+                  value: "Application component"
+                  severity: WARNING
       macros:
-        -
-          macro: '{$ACM_DISCOVERY_KEEP_PERIOD}'
-          value: '0'
-          description: 'Amount of time to keep items that are no longer part of the discovery result.'
-        -
-          macro: '{$ACM_HTTP_PASS}'
-          description: '(Optional) password to use to query the endpoints'
-        -
-          macro: '{$ACM_HTTP_USER}'
-          description: '(Optional) username to use to query the endpoints'
-        -
-          macro: '{$ACM_INTERVAL}'
+        - macro: "{$ACM_DISCOVERY_KEEP_PERIOD}"
+          value: "0"
+          description: "Amount of time to keep items that are no longer part of the discovery result."
+        - macro: "{$ACM_HTTP_PASS}"
+          description: "(Optional) password to use to query the endpoints"
+        - macro: "{$ACM_HTTP_USER}"
+          description: "(Optional) username to use to query the endpoints"
+        - macro: "{$ACM_INTERVAL}"
           value: 2m
-          description: 'Update interval for retrieving the component statuses'
-        -
-          macro: '{$ACM_URL}'
-          value: '{HOSTNAME}/acm/status'
-          description: 'URL to use to retrieve component services with'
+          description: "Update interval for retrieving the component statuses"
+        - macro: "{$ACM_URL}"
+          value: "{HOSTNAME}/acm/status"
+          description: "URL to use to retrieve component services with"
       dashboards:
-        -
-          name: 'Application Component Status'
-          widgets:
-            -
-              type: GRAPH_PROTOTYPE
-              width: '23'
-              height: '12'
-              hide_header: 'YES'
-              fields:
-                -
-                  type: INTEGER
-                  name: show_legend
-                  value: '0'
-                -
-                  type: INTEGER
-                  name: rows
-                  value: '2'
-                -
-                  type: INTEGER
-                  name: columns
-                  value: '3'
-                -
-                  type: GRAPH_PROTOTYPE
-                  name: graphid
-                  value:
-                    name: 'Application Component Status - {#NAME}'
-                    host: 'Application Component Monitoring'
-  value_maps:
-    -
-      name: 'Application Component Monitoring'
-      mappings:
-        -
-          value: '0'
-          newvalue: OK
-        -
-          value: '1'
-          newvalue: Degraded
-        -
-          value: '2'
-          newvalue: Problem
+        - uuid: 1e75cec0f40a48738b28fe074d3149e5
+          name: "Application Component Status"
+          pages:
+            - widgets:
+                - type: GRAPH_PROTOTYPE
+                  width: "23"
+                  height: "12"
+                  hide_header: "YES"
+                  fields:
+                    - type: INTEGER
+                      name: show_legend
+                      value: "0"
+                    - type: INTEGER
+                      name: rows
+                      value: "2"
+                    - type: INTEGER
+                      name: columns
+                      value: "3"
+                    - type: GRAPH_PROTOTYPE
+                      name: graphid
+                      value:
+                        name: "Application Component Status - {#NAME}"
+                        host: "Application Component Monitoring"
+      valuemaps:
+        - uuid: 2fbe30a013c54052953ad51df0ab23f8
+          name: "Application Component Monitoring"
+          mappings:
+            - value: "0"
+              newvalue: OK
+            - value: "1"
+              newvalue: Degraded
+            - value: "2"
+              newvalue: Problem
